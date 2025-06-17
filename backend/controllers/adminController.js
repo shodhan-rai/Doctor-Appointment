@@ -5,6 +5,7 @@ import doctorModel from "../models/doctorModel.js";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
+import medRepModel from "../models/medRepModel.js";
 
 // API for adding doctor
 const addDoctor = async (req, res) => {
@@ -182,6 +183,96 @@ const adminDashboard = async (req, res) => {
   }
 };
 
+// Add Medical Representative
+const addMedRep = async (req, res) => {
+  try {
+    console.log("Add Med Rep route hit"); // Debug log
+    console.log("Request body:", req.body); // Debug log
+    
+    const {
+      name,
+      email,
+      password,
+      company,
+      territory,
+      employeeId,
+      specialization,
+      phone,
+    } = req.body;
+    const imageFile = req.file;
+
+    // checking for all data to add med rep
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !company ||
+      !territory ||
+      !employeeId ||
+      !specialization ||
+      !phone
+    ) {
+      return res.json({ success: false, message: "Missing Details" });
+    }
+
+    // validating email format
+    if (!validator.isEmail(email)) {
+      return res.json({
+        success: false,
+        message: "Please enter a valid email",
+      });
+    }
+
+    // validating strong password
+    if (password.length < 8) {
+      return res.json({
+        success: false,
+        message: "Please enter a strong password",
+      });
+    }
+
+    // hashing med rep password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // upload image to cloudinary
+    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+      resource_type: "image",
+    });
+    const imageUrl = imageUpload.secure_url;
+
+    const medRepData = {
+      name,
+      email,
+      image: imageUrl,
+      password: hashedPassword,
+      company,
+      territory,
+      employeeId,
+      specialization,
+      phone,
+    };
+
+    const newMedRep = new medRepModel(medRepData);
+    await newMedRep.save();
+    res.json({ success: true, message: "Medical Representative Added" });
+  } catch (error) {
+    console.log("Error in addMedRep:", error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Get all Medical Representatives
+const allMedReps = async (req, res) => {
+  try {
+    const medReps = await medRepModel.find({}).select("-password");
+    res.json({ success: true, medReps });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -189,4 +280,6 @@ export {
   appointmentsAdmin,
   appointmentCancel,
   adminDashboard,
+  addMedRep,
+  allMedReps,
 };

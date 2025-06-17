@@ -102,6 +102,26 @@ const AdminContextProvider = (props) => {
     }
   };
 
+  const getAllMedReps = async () => {
+    try {
+      console.log("Getting all med reps..."); // Debug log
+      const { data } = await axios.post(
+        backendUrl + "/api/admin/all-medreps",
+        {},
+        { headers: { aToken } }
+      );
+      if (data.success) {
+        console.log("Med reps fetched:", data.medReps); // Debug log
+        return data.medReps;
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching med reps:", error); // Debug log
+      toast.error(error.message);
+    }
+  };
+
   const value = {
     aToken,
     setAToken,
@@ -115,6 +135,7 @@ const AdminContextProvider = (props) => {
     cancelAppointment,
     dashData,
     getDashData,
+    getAllMedReps,
   };
 
   return (
