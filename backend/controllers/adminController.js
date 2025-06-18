@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
 import medRepModel from "../models/medRepModel.js";
+import meetingModel from "../models/meetingModel.js";
 
 // API for adding doctor
 const addDoctor = async (req, res) => {
@@ -273,6 +274,36 @@ const allMedReps = async (req, res) => {
   }
 };
 
+// Temporary function to create sample meeting for testing
+const createSampleMeeting = async (req, res) => {
+  try {
+    // Get first doctor and med rep
+    const doctor = await doctorModel.findOne({});
+    const medRep = await medRepModel.findOne({});
+    
+    if (!doctor || !medRep) {
+      return res.json({ success: false, message: "Need at least one doctor and one med rep" });
+    }
+
+    const sampleMeeting = new meetingModel({
+      medRepId: medRep._id,
+      doctorId: doctor._id,
+      title: "Product Demo - CardioMax",
+      description: "Presentation of new cardiac medication",
+      meetingDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+      location: "City Hospital",
+      meetingType: "In-Person",
+      agenda: ["Product presentation", "Clinical data review", "Pricing discussion"]
+    });
+    
+    await sampleMeeting.save();
+    res.json({ success: true, message: "Sample meeting created" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -282,4 +313,5 @@ export {
   adminDashboard,
   addMedRep,
   allMedReps,
+  createSampleMeeting,
 };

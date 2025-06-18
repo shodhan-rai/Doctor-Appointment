@@ -1,7 +1,8 @@
 import doctorModel from "../models/doctorModel.js";
-import bycrypt from "bcrypt";
+import bcrypt from "bcrypt"; // Fixed typo: was "bycrypt"
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
+import meetingModel from "../models/meetingModel.js";
 
 const changeAvailability = async (req, res) => {
   try {
@@ -28,7 +29,7 @@ const doctorList = async (req, res) => {
   }
 };
 
-// API for doctor Login
+// API for doctor Login - Fixed bcrypt typo
 const loginDoctor = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -38,7 +39,7 @@ const loginDoctor = async (req, res) => {
       return res.json({ success: false, message: "Invalid credentials" });
     }
 
-    const isMatch = await bycrypt.compare(password, doctor.password);
+    const isMatch = await bcrypt.compare(password, doctor.password); // Fixed typo
 
     if (isMatch) {
       const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET);
@@ -95,9 +96,66 @@ const appointmentCancel = async (req, res) => {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
         cancelled: true,
       });
+
+      // releasing doctor slot
+      const { slotDate, slotTime } = appointmentData;
+      const doctorData = await doctorModel.findById(docId);
+      let slots_booked = doctorData.slots_booked;
+      slots_booked[slotDate] = slots_booked[slotDate].filter(
+        (e) => e !== slotTime
+      );
+      await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
       return res.json({ success: true, message: "Appointment Cancelled" });
     } else {
       return res.json({ success: false, message: "Cancellation Failed" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to get doctor meetings
+const getDoctorMeetings = async (req, res) => {
+  try {
+    const { docId } = req.body;
+    const meetings = await meetingModel
+      .find({ doctorId: docId })
+      .populate("medRepId", "name company phone email");
+
+    res.json({ success: true, meetings });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to respond to meeting requests
+const updateMeetingResponse = async (req, res) => {
+  try {
+    const { docId, meetingId, status, doctorNotes } = req.body;
+    
+    const meetingData = await meetingModel.findById(meetingId);
+
+    if (meetingData && meetingData.doctorId.toString() === docId) {
+      const updateData = { status };
+      if (doctorNotes) {
+        updateData.doctorNotes = doctorNotes;
+      }
+
+      await meetingModel.findByIdAndUpdate(meetingId, updateData);
+
+      let message = "Meeting updated successfully";
+      if (status === "Cancelled") {
+        message = "Meeting cancelled successfully";
+      } else if (status === "Confirmed") {
+        message = "Meeting confirmed successfully";
+      }
+
+      res.json({ success: true, message });
+    } else {
+      res.json({ success: false, message: "Unauthorized action" });
     }
   } catch (error) {
     console.log(error);
@@ -110,9 +168,11 @@ const doctorDashboard = async (req, res) => {
   try {
     const { docId } = req.body;
     const appointments = await appointmentModel.find({ docId });
+    const meetings = await meetingModel
+      .find({ doctorId: docId })
+      .populate("medRepId", "name");
 
     let earnings = 0;
-
     appointments.map((item) => {
       if (item.isCompleted || item.payment) {
         earnings += item.amount;
@@ -120,7 +180,6 @@ const doctorDashboard = async (req, res) => {
     });
 
     let patients = [];
-
     appointments.map((item) => {
       if (!patients.includes(item.userId)) {
         patients.push(item.userId);
@@ -131,7 +190,9 @@ const doctorDashboard = async (req, res) => {
       earnings,
       appointments: appointments.length,
       patients: patients.length,
+      meetings: meetings ? meetings.length : 0,
       latestAppointments: appointments.reverse().slice(0, 5),
+      latestMeetings: meetings ? meetings.reverse().slice(0, 3) : [],
     };
 
     res.json({ success: true, dashData });
@@ -141,12 +202,11 @@ const doctorDashboard = async (req, res) => {
   }
 };
 
-// API to get doctor profile for Doctor panel
+// API to get doctor profile
 const doctorProfile = async (req, res) => {
   try {
     const { docId } = req.body;
     const profileData = await doctorModel.findById(docId).select("-password");
-
     res.json({ success: true, profileData });
   } catch (error) {
     console.log(error);
@@ -154,13 +214,11 @@ const doctorProfile = async (req, res) => {
   }
 };
 
-// API to update doctor profile data from Doctor panel
+// API to update doctor profile
 const updateDoctorProfile = async (req, res) => {
   try {
     const { docId, fees, address, available } = req.body;
-
     await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
-
     res.json({ success: true, message: "Profile Updated" });
   } catch (error) {
     console.log(error);
@@ -178,4 +236,6 @@ export {
   doctorDashboard,
   doctorProfile,
   updateDoctorProfile,
+  getDoctorMeetings,
+  updateMeetingResponse,
 };

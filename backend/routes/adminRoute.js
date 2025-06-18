@@ -8,6 +8,7 @@ import {
   adminDashboard,
   addMedRep,
   allMedReps,
+  createSampleMeeting, // Add this
 } from "../controllers/adminController.js";
 import upload from "../middlewares/multer.js";
 import authAdmin from "../middlewares/authAdmin.js";
@@ -27,9 +28,11 @@ adminRouter.get("/dashboard", authAdmin, adminDashboard);
 adminRouter.post("/add-medrep", authAdmin, upload.single("image"), addMedRep);
 adminRouter.post("/all-medreps", authAdmin, allMedReps);
 
-// Test route
+// Test routes
 adminRouter.get("/test-medrep", (req, res) => {
   res.json({ success: true, message: "Med rep route working" });
 });
+
+adminRouter.post("/create-sample-meeting", authAdmin, createSampleMeeting); // Add this
 
 export default adminRouter;
