@@ -9,13 +9,14 @@ const Login = () => {
   const navigate = useNavigate();
 
   const [state, setState] = useState("Sign Up");
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+    setLoading(true);
 
     try {
       if (state === "Sign Up") {
@@ -24,9 +25,15 @@ const Login = () => {
           email,
           password,
         });
+
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
+          toast.success(data.message || "Account created successfully!");
+          // Clear form
+          setName("");
+          setEmail("");
+          setPassword("");
         } else {
           toast.error(data.message);
         }
@@ -35,23 +42,34 @@ const Login = () => {
           email,
           password,
         });
+
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
+          toast.success(data.message || "Login successful!");
+          // Clear form
+          setEmail("");
+          setPassword("");
         } else {
           toast.error(data.message);
         }
       }
     } catch (error) {
-      toast.error(error.message);
+      console.log(error);
+      toast.error(error.message || "Something went wrong!");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (token) {
-      navigate("/");
+      // Add a small delay to ensure token is properly set
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
     }
-  }, [token]);
+  }, [token, navigate]);
 
   return (
     <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
@@ -63,6 +81,7 @@ const Login = () => {
           Please {state === "Sign Up" ? "sign up" : "log in"} to book
           appointment
         </p>
+
         {state === "Sign Up" && (
           <div className="w-full">
             <p>Full Name</p>
@@ -72,6 +91,7 @@ const Login = () => {
               onChange={(e) => setName(e.target.value)}
               value={name}
               required
+              disabled={loading}
             />
           </div>
         )}
@@ -84,8 +104,10 @@ const Login = () => {
             onChange={(e) => setEmail(e.target.value)}
             value={email}
             required
+            disabled={loading}
           />
         </div>
+
         <div className="w-full">
           <p>Password</p>
           <input
@@ -94,20 +116,30 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             value={password}
             required
+            disabled={loading}
           />
         </div>
+
         <button
           type="submit"
-          className="bg-primary text-white w-full py-2 rounded-md text-base"
+          disabled={loading}
+          className="bg-primary text-white w-full py-2 rounded-md text-base disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {state === "Sign Up" ? "Create Account" : "Login"}
+          {loading
+            ? "Processing..."
+            : state === "Sign Up"
+            ? "Create Account"
+            : "Login"}
         </button>
+
         {state === "Sign Up" ? (
           <p>
             Already have an account?{" "}
             <span
-              onClick={() => setState("Login")}
-              className="text-primary underline cursor-pointer"
+              onClick={() => !loading && setState("Login")}
+              className={`text-primary underline ${
+                loading ? "cursor-not-allowed" : "cursor-pointer"
+              }`}
             >
               Login here
             </span>
@@ -116,8 +148,10 @@ const Login = () => {
           <p>
             Create a new account?{" "}
             <span
-              onClick={() => setState("Sign Up")}
-              className="text-primary underline cursor-pointer"
+              onClick={() => !loading && setState("Sign Up")}
+              className={`text-primary underline ${
+                loading ? "cursor-not-allowed" : "cursor-pointer"
+              }`}
             >
               click here
             </span>

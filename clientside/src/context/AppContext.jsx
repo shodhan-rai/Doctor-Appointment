@@ -33,8 +33,9 @@ const AppContextProvider = (props) => {
       const { data } = await axios.get(backendUrl + "/api/user/get-profile", {
         headers: { token },
       });
+
       if (data.success) {
-        setUserData(data.user);
+        setUserData(data.userData);
       } else {
         toast.error(data.message);
       }
@@ -60,6 +61,7 @@ const AppContextProvider = (props) => {
     getDoctorsData();
   }, []);
 
+  // Load user profile when token changes
   useEffect(() => {
     if (token) {
       loadUserProfileData();

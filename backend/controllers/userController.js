@@ -1,5 +1,5 @@
 import validator from "validator";
-import bycrypt from "bcrypt";
+import bcrypt from "bcrypt"; // Fixed typo: was "bycrypt"
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
@@ -25,9 +25,15 @@ const registerUser = async (req, res) => {
       return res.json({ success: false, message: "enter a strong password" });
     }
 
+    // Check if user already exists
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.json({ success: false, message: "User already exists" });
+    }
+
     // hashing user password
-    const salt = await bycrypt.genSalt(10);
-    const hashedPassword = await bycrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10); // Fixed typo
+    const hashedPassword = await bcrypt.hash(password, salt); // Fixed typo
 
     const userData = {
       name,
@@ -38,9 +44,10 @@ const registerUser = async (req, res) => {
     const newUser = new userModel(userData);
     const user = await newUser.save();
 
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    // Fixed: Use consistent token ID format
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-    res.json({ success: true, token });
+    res.json({ success: true, token, message: "Account created successfully" });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -57,11 +64,11 @@ const loginUser = async (req, res) => {
       return res.json({ success: false, message: "User does not exist" });
     }
 
-    const isMatch = await bycrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password); // Fixed typo
 
     if (isMatch) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-      res.json({ success: true, token });
+      res.json({ success: true, token, message: "Login successful" });
     } else {
       res.json({ success: false, message: "Invalid credentials" });
     }
@@ -75,9 +82,9 @@ const loginUser = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const { userId } = req.body;
-    const useData = await userModel.findById(userId).select("-password");
+    const userData = await userModel.findById(userId).select("-password");
 
-    res.json({ success: true, user: useData });
+    res.json({ success: true, userData });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -189,7 +196,6 @@ const listAppointment = async (req, res) => {
 const cancelAppointment = async (req, res) => {
   try {
     const { userId, appointmentId } = req.body;
-
     const appointmentData = await appointmentModel.findById(appointmentId);
 
     // verify appointment user
@@ -202,7 +208,6 @@ const cancelAppointment = async (req, res) => {
     });
 
     // releasing doctor slot
-
     const { docId, slotDate, slotTime } = appointmentData;
 
     const doctorData = await doctorModel.findById(docId);
