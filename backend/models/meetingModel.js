@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const meetingSchema = new mongoose.Schema({
     medRepId: { type: mongoose.Schema.Types.ObjectId, ref: 'MedRep', required: true },
-    doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+    doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true }, // Keep as 'Doctor'
     title: { type: String, required: true },
     description: { type: String },
     meetingDate: { type: Date, required: true },

@@ -25,5 +25,6 @@ export const assets = {
     list_icon,
     tick_icon,
     appointments_icon,
-    earning_icon
+    earning_icon,
+    pending_icon: patients_icon
 }

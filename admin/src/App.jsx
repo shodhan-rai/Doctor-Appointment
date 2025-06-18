@@ -1,11 +1,11 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import Login from "./pages/Login";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AdminContext } from "./context/AdminContext";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Admin/Dashboard";
 import AllAppointments from "./pages/Admin/AllAppointments";
 import AddDoctor from "./pages/Admin/AddDoctor";
@@ -28,8 +28,21 @@ const App = () => {
       <div className="flex items-start">
         <Sidebar />
         <Routes>
-          {/* Admin Route */}
-          <Route path="/" element={<></>} />
+          {/* Default Route - Redirect to appropriate dashboard */}
+          <Route
+            path="/"
+            element={
+              aToken ? (
+                <Navigate to="/admin-dashboard" replace />
+              ) : dToken ? (
+                <Navigate to="/doctor-dashboard" replace />
+              ) : (
+                <Navigate to="/admin-dashboard" replace />
+              )
+            }
+          />
+
+          {/* Admin Routes */}
           <Route path="/admin-dashboard" element={<Dashboard />} />
           <Route path="/all-appointments" element={<AllAppointments />} />
           <Route path="/add-doctor" element={<AddDoctor />} />
@@ -37,7 +50,7 @@ const App = () => {
           <Route path="/add-medrep" element={<AddMedRep />} />
           <Route path="/medreps-list" element={<MedRepsList />} />
 
-          {/* Doctor Route */}
+          {/* Doctor Routes */}
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
           <Route path="/doctor-appointments" element={<DoctorAppointments />} />
           <Route path="/doctor-profile" element={<DoctorProfile />} />

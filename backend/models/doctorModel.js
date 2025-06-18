@@ -19,7 +19,8 @@ const doctorSchema = new mongoose.Schema(
   { minimize: false }
 );
 
+// Use consistent naming - capitalize "Doctor"
 const doctorModel =
-  mongoose.models.doctor || mongoose.model("doctor", doctorSchema);
+  mongoose.models.Doctor || mongoose.model("Doctor", doctorSchema);
 
 export default doctorModel;

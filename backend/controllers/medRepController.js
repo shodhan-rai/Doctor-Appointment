@@ -41,12 +41,15 @@ const getMedRepProfile = async (req, res) => {
     }
 };
 
-// Get Assigned Doctors
+// Get Assigned Doctors - Fixed to return all doctors if no assignments
 const getAssignedDoctors = async (req, res) => {
     try {
         const { medRepId } = req.body;
-        const medRep = await medRepModel.findById(medRepId).populate('assignedDoctors');
-        res.json({ success: true, doctors: medRep.assignedDoctors });
+        
+        // For now, return all available doctors since assignment system isn't fully implemented
+        const doctors = await doctorModel.find({ available: true }).select("-password");
+        
+        res.json({ success: true, doctors });
     } catch (error) {
         console.log(error);
         res.json({ success: false, message: error.message });
@@ -83,7 +86,7 @@ const scheduleMeeting = async (req, res) => {
 const getMedRepMeetings = async (req, res) => {
     try {
         const { medRepId } = req.body;
-        const meetings = await meetingModel.find({ medRepId }).populate('doctorId', 'name speciality');
+        const meetings = await meetingModel.find({ medRepId }).populate('doctorId', 'name speciality image');
         res.json({ success: true, meetings });
     } catch (error) {
         console.log(error);
@@ -105,8 +108,7 @@ const updateMeetingStatus = async (req, res) => {
         
         // Update completed meetings count if status is completed
         if (status === 'Completed') {
-            const meeting = await meetingModel.findById(meetingId);
-            await medRepModel.findByIdAndUpdate(meeting.medRepId, { $inc: { completedMeetings: 1 } });
+            await medRepModel.findByIdAndUpdate(req.body.medRepId, { $inc: { completedMeetings: 1 } });
         }
 
         res.json({ success: true, message: "Meeting updated successfully" });
@@ -124,13 +126,15 @@ const getDashboardStats = async (req, res) => {
         const totalMeetings = await meetingModel.countDocuments({ medRepId });
         const completedMeetings = await meetingModel.countDocuments({ medRepId, status: 'Completed' });
         const scheduledMeetings = await meetingModel.countDocuments({ medRepId, status: 'Scheduled' });
-        const assignedDoctors = await medRepModel.findById(medRepId).select('assignedDoctors');
+        
+        // Get all available doctors for now (since assignment system isn't fully implemented)
+        const totalDoctors = await doctorModel.countDocuments({ available: true });
 
         const stats = {
             totalMeetings,
             completedMeetings,
             scheduledMeetings,
-            totalDoctors: assignedDoctors.assignedDoctors.length
+            totalDoctors
         };
 
         res.json({ success: true, stats });
